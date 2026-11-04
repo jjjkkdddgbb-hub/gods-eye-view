@@ -14,12 +14,13 @@
     <div class="top-actions"><span class="local-badge"><i></i> تحليل محلي · بدون تنفيذ صفقات</span><button id="alertsButton" class="button secondary">تفعيل التنبيهات</button></div>
   </header>
   <main class="shell">
-    <section class="intro"><div><p class="eyebrow">ORDER BLOCKS · RSI · MOMENTUM · BOS / RETEST</p><h1>راقب الإشارة، واتخذ قرارك بنفسك.</h1><p class="muted">أداة تعليمية لتحليل بيانات الشموع التي تزودها. لا تتصل بمنصة تداول ولا ترسل أوامر.</p></div><div class="live-state"><span class="pulse"></span><span id="dataState">بيانات العرض التجريبي</span></div></section>
+    <section class="intro"><div><p class="eyebrow">ORDER BLOCKS · RSI · MOMENTUM · BOS / RETEST</p><h1>راقب الإشارة، واتخذ قرارك بنفسك.</h1><p class="muted">أداة تعليمية لتحليل بيانات الشموع. لا تتصل بمنصة تداول ولا ترسل أوامر.</p></div><div class="live-state"><span class="pulse"></span><span id="dataState">بيانات العرض التجريبي</span></div></section>
     <section class="toolbar panel" aria-label="إعدادات التحليل">
-      <label class="field">الأصل / الرمز<input id="symbolInput" value="DEMO / USD" maxlength="24" autocomplete="off"></label>
+      <label class="field">الأصل / الرمز<input id="symbolInput" value="BTCUSDT" maxlength="24" autocomplete="off"></label>
       <label class="field">الإطار الزمني<select id="timeframe"><option>1 دقيقة</option><option>5 دقائق</option><option selected>15 دقيقة</option><option>1 ساعة</option><option>4 ساعات</option><option>يومي</option></select></label>
       <label class="field upload-field">استيراد شموع CSV<input id="csvInput" type="file" accept=".csv,text/csv"></label>
       <button id="demoButton" class="button secondary">بيانات تجريبية</button>
+      <button id="liveButton" class="button secondary">تحديث مباشر</button>
       <button id="analyzeButton" class="button primary">تحليل الآن <span aria-hidden="true">↗</span></button>
     </section>
     <section class="summary-grid" aria-label="ملخص السوق">
@@ -29,7 +30,7 @@
       <article class="metric panel"><span>قوة توافق الشروط</span><strong id="scoreValue">—</strong><small>ليست احتمال ربح</small></article>
     </section>
     <section class="main-grid">
-      <article class="panel chart-panel"><div class="panel-heading"><div><p class="eyebrow">PRICE ACTION</p><h2 id="chartTitle">DEMO / USD <span>· 15 دقيقة</span></h2></div><div class="legend"><span><i class="green"></i> صاعدة</span><span><i class="red"></i> هابطة</span></div></div><div class="chart-wrap"><canvas id="chart" aria-label="رسم الشموع للبيانات الحالية"></canvas><div id="emptyChart" class="empty-chart" hidden>استورد ملف شموع CSV أو اعرض البيانات التجريبية.</div></div><div class="chart-footer"><span id="candleCount">0 شمعة</span><span>الرسم من البيانات المحلية في هذه الجلسة</span></div></article>
+      <article class="panel chart-panel"><div class="panel-heading"><div><p class="eyebrow">PRICE ACTION</p><h2 id="chartTitle">BTCUSDT <span>· 15 دقيقة</span></h2></div><div class="legend"><span><i class="green"></i> صاعدة</span><span><i class="red"></i> هابطة</span></div></div><div class="chart-wrap"><canvas id="chart" aria-label="رسم الشموع للبيانات الحالية"></canvas><div id="emptyChart" class="empty-chart" hidden>استورد ملف شموع CSV أو اعرض البيانات التجريبية.</div></div><div class="chart-footer"><span id="candleCount">0 شمعة</span><span>الرسم من البيانات المحلية في هذه الجلسة</span></div></article>
       <aside class="panel signal-panel"><div class="panel-heading"><div><p class="eyebrow">مخرجات الاستراتيجية</p><h2>حالة الإشارة</h2></div><span class="lock-icon" title="قراءة فقط">◉</span></div><div id="signalCard" class="signal-card neutral"><span id="signalIcon" class="signal-icon">—</span><div><strong id="signalTitle">بانتظار البيانات</strong><p id="signalDescription">ارفع بيانات OHLC لبدء التحليل.</p></div></div><div class="signal-details"><div><span>الكسر وإعادة الاختبار</span><strong id="bosState">—</strong></div><div><span>منطقة Order Block</span><strong id="obState">—</strong></div><div><span>توافق RSI والزخم</span><strong id="confirmState">—</strong></div></div><button id="saveSignal" class="button save-button" disabled>حفظ النتيجة في السجل</button><p class="disclaimer">إشارة آلية مبسطة وليست توصية مالية. قد تكون البيانات متأخرة أو ناقصة، والنتيجة لا تضمن أي أداء مستقبلي.</p></aside>
     </section>
     <section class="panel journal-panel"><div class="panel-heading"><div><p class="eyebrow">سجل هذا المتصفح فقط</p><h2>آخر التحليلات المحفوظة</h2></div><button id="clearJournal" class="text-button">مسح السجل</button></div><div class="table-scroll"><table><thead><tr><th>الوقت</th><th>الرمز</th><th>الإطار</th><th>الحالة</th><th>السعر</th><th>التوافق</th></tr></thead><tbody id="journalBody"><tr><td colspan="6" class="empty-row">لا توجد نتائج محفوظة.</td></tr></tbody></table></div></section>

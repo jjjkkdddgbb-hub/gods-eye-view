@@ -1,12 +1,19 @@
 const $ = (id) => document.getElementById(id);
 const STORAGE_KEY = 'gev-trading-signals-journal-v1';
+const TIMEFRAME_TO_BINANCE = {
+  '1 دقيقة': '1m',
+  '5 دقائق': '5m',
+  '15 دقيقة': '15m',
+  '1 ساعة': '1h',
+  '4 ساعات': '4h',
+  'يومي': '1d',
+};
 let candles = [];
 let latestAnalysis = null;
 let notificationsEnabled = false;
 let resizeObserver;
 
 function demoCandles(count = 100) {
-  // Deterministic, explicitly synthetic data. Never presented as a live quote.
   let close = 1.084;
   return Array.from({ length: count }, (_, i) => {
     const drift = i < 38 ? 0.000035 : i < 68 ? -0.000018 : 0.00004;
@@ -16,6 +23,54 @@ function demoCandles(count = 100) {
     const spread = 0.00008 + (i % 7) * 0.000012;
     return { time: new Date(Date.UTC(2025, 0, 1, 0, i * 15)).toISOString(), open, high: Math.max(open, close) + spread, low: Math.min(open, close) - spread, close, volume: 100 + (i % 13) * 17 };
   });
+}
+
+function normalizeMarketSymbol(rawValue) {
+  const cleaned = (rawValue || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!cleaned) return 'BTCUSDT';
+  return cleaned.includes('USDT') || cleaned.includes('USD') || cleaned.includes('BTC') || cleaned.includes('ETH') || cleaned.includes('BNB') || cleaned.includes('SOL') || cleaned.includes('ADA') || cleaned.includes('XRP') || cleaned.includes('USDC') ? cleaned : `${cleaned}USDT`;
+}
+
+function getSelectedBinanceInterval() {
+  return TIMEFRAME_TO_BINANCE[$('timeframe').value] || '15m';
+}
+
+async function fetchBinanceKlines(symbol, interval, limit = 220) {
+  const apiUrl = `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&limit=${limit}`;
+  const response = await fetch(apiUrl, { headers: { Accept: 'application/json' } });
+  if (!response.ok) {
+    throw new Error(`تعذّر جلب البيانات من Binance للرمز ${symbol} (${response.status}).`);
+  }
+  const rows = await response.json();
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throw new Error(`لم تعُد Binance أي شموع لـ ${symbol}.`);
+  }
+
+  return rows.map(([timestamp, open, high, low, close, volume]) => ({
+    time: new Date(timestamp).toISOString(),
+    open: Number(open),
+    high: Number(high),
+    low: Number(low),
+    close: Number(close),
+    volume: Number(volume),
+  }));
+}
+
+async function loadLiveMarketData() {
+  const symbol = normalizeMarketSymbol($('symbolInput').value);
+  const interval = getSelectedBinanceInterval();
+  try {
+    $('dataState').textContent = `جارٍ تحديث ${symbol} من Binance…`;
+    const liveCandles = await fetchBinanceKlines(symbol, interval, 220);
+    candles = liveCandles;
+    $('symbolInput').value = symbol;
+    $('dataState').textContent = `بيانات مباشرة — Binance • ${symbol} • ${$('timeframe').value}`;
+    render();
+    showToast(`تم تحديث ${symbol} من Binance.`);
+  } catch (error) {
+    showToast(error.message || 'تعذّر تحديث البيانات مباشرة.');
+    $('dataState').textContent = 'فشل تحديث البيانات المباشرة';
+  }
 }
 
 function parseCsv(text) {
@@ -102,6 +157,7 @@ function formatPrice(value) {
   if (!Number.isFinite(value)) return '—';
   return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: value < 1 ? 5 : 3 }).format(value);
 }
+
 function showToast(message) {
   const toast = $('toast'); toast.textContent = message; toast.classList.add('visible');
   clearTimeout(showToast.timer); showToast.timer = setTimeout(() => toast.classList.remove('visible'), 3200);
@@ -183,6 +239,7 @@ function renderJournal() {
 }
 
 $('analyzeButton').addEventListener('click', () => { if (!candles.length) return showToast('حمّل ملف CSV أولاً أو اختر البيانات التجريبية.'); render(); showToast('تم تحديث التحليل المحلي.'); });
+$('liveButton').addEventListener('click', () => { loadLiveMarketData(); });
 $('demoButton').addEventListener('click', () => { candles = demoCandles(); $('dataState').textContent = 'بيانات صناعية توضيحية · ليست أسعاراً حقيقية'; $('csvInput').value = ''; render(); showToast('تم تحميل بيانات صناعية للتجربة فقط.'); });
 $('csvInput').addEventListener('change', async (event) => {
   const file = event.target.files?.[0]; if (!file) return;
@@ -195,7 +252,7 @@ $('saveSignal').addEventListener('click', () => {
   if (!latestAnalysis) return;
   const result = latestAnalysis; const direction = result.signal;
   const item = { time: new Date().toLocaleString('ar', { dateStyle: 'short', timeStyle: 'short' }), symbol: result.symbol, timeframe: result.timeframe, direction: direction || 'none', label: direction === 'up' ? 'صعود محتمل' : direction === 'down' ? 'هبوط محتمل' : 'انتظار', price: formatPrice(result.last.close), score: result.score };
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify([item, ...readJournal()].slice(0, 50))); renderJournal(); showToast('حُفظت النتيجة محلياً في هذا المتصفح.'); }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify([item, ...readJournal()].slice(0, 50))); renderJournal(); showToast('حُفظت النتيجة محلياً في هذ�� المتصفح.'); }
   catch { showToast('تعذر الحفظ المحلي؛ قد تكون مساحة المتصفح ممتلئة.'); }
 });
 $('clearJournal').addEventListener('click', () => { localStorage.removeItem(STORAGE_KEY); renderJournal(); showToast('تم مسح السجل المحلي.'); });
@@ -205,8 +262,6 @@ $('alertsButton').addEventListener('click', async () => {
   if (permission === 'granted') { notificationsEnabled = !notificationsEnabled; $('alertsButton').textContent = notificationsEnabled ? 'إيقاف التنبيهات' : 'تفعيل التنبيهات'; showToast(notificationsEnabled ? 'ستظهر تنبيهات عند التحليل اليدوي فقط.' : 'تم إيقاف التنبيهات.'); }
   else showToast('لم يتم منح إذن التنبيهات.');
 });
-const originalRender = render;
-// Notifications happen only after a user-triggered analysis, never in the background.
 $('analyzeButton').addEventListener('click', () => {
   if (!notificationsEnabled || !latestAnalysis?.signal || Notification.permission !== 'granted') return;
   new Notification('عين السوق · إشارة تعليمية', { body: `${latestAnalysis.symbol}: ${latestAnalysis.signal === 'up' ? 'صعود محتمل' : 'هبوط محتمل'} · توافق ${latestAnalysis.score}/4` });
